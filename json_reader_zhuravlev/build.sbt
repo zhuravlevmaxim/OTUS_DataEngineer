@@ -4,13 +4,13 @@ lazy val root = (project in file(".")).
 
   settings(
     inThisBuild(List(
-      organization := "otus_data_engimneer",
+      organization := "otus_data_engineer",
       scalaVersion := "2.11.8"
     )),
     name := "json_reader_zhuravlev",
     version := "0.0.1",
 
-    sparkVersion := "2.3.0",
+    sparkVersion := "2.4.4",
     sparkComponents := Seq(),
 
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
@@ -22,8 +22,9 @@ lazy val root = (project in file(".")).
     coverageHighlighting := true,
 
     libraryDependencies ++= Seq(
-      "org.apache.spark" %% "spark-streaming" % "2.3.0" % "provided",
-      "org.apache.spark" %% "spark-sql" % "2.3.0" % "provided",
+      "org.apache.spark" %% "spark-streaming" % "2.4.4" % "provided",
+      "org.apache.spark" %% "spark-sql" % "2.4.4" % "provided",
+      "org.json4s" %% "json4s-jackson" % "3.2.10",
 
       "org.scalatest" %% "scalatest" % "3.0.1" % "test",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
