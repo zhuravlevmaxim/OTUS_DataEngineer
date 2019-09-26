@@ -3,11 +3,13 @@ package otus_data_engineer.lesson7_hw
 import org.apache.spark.sql.{Encoders, SparkSession}
 import org.apache.spark.sql.functions._
 import otus_data_engineer.lesson7_hw.case_classes.{Crime, OffenseCodes}
+import org.apache.log4j.{Level, Logger}
 
 object BostonCrimesMap extends App {
 
-  val spark = SparkSession.builder().appName("BostonCrimesMap").getOrCreate()
+  val spark = SparkSession.builder().master("local[*]").appName("BostonCrimesMap").getOrCreate()
   import spark.implicits._
+  Logger.getLogger("org").setLevel(Level.OFF)
 
   val paths = args.take(3)
   val pathToCrimeFile = paths(0)
@@ -16,13 +18,13 @@ object BostonCrimesMap extends App {
 
   val crimeSchema = Encoders.product[Crime].schema
   val crimeDf = spark.read
-    .option("header", "true").option("sep", ",").option("encoding", "utf-8")
+    .option("header", "true").option("sep", ";").option("encoding", "utf-8")
     .schema(crimeSchema)
     .csv(pathToCrimeFile).as[Crime]
 
   val offenseCodesSchema = Encoders.product[OffenseCodes].schema
   val offenseCodesDf = spark.read
-    .option("header", "true").option("sep", ",").option("encoding", "utf-8")
+    .option("header", "true").option("sep", ";").option("encoding", "utf-8")
     .schema(offenseCodesSchema)
     .csv(pathToOffenseCodesFile).distinct().as[OffenseCodes]
 

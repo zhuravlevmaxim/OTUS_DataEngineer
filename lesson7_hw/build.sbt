@@ -10,7 +10,7 @@ lazy val root = (project in file(".")).
     name := "lesson7_hw",
     version := "0.0.1",
 
-    sparkVersion := "2.3.0",
+    sparkVersion := "2.4.4",
     sparkComponents := Seq(),
 
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
@@ -22,8 +22,8 @@ lazy val root = (project in file(".")).
     coverageHighlighting := true,
 
     libraryDependencies ++= Seq(
-      "org.apache.spark" %% "spark-streaming" % "2.3.0" % "provided",
-      "org.apache.spark" %% "spark-sql" % "2.3.0" % "provided",
+      "org.apache.spark" %% "spark-streaming" % "2.4.4" % "provided",
+      "org.apache.spark" %% "spark-sql" % "2.4.4" % "provided",
 
       "org.scalatest" %% "scalatest" % "3.0.1" % "test",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
