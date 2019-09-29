@@ -18,13 +18,13 @@ object BostonCrimesMap extends App {
 
   val crimeSchema = Encoders.product[Crime].schema
   val crimeDf = spark.read
-    .option("header", "true").option("sep", ";").option("encoding", "utf-8")
+    .option("header", "true").option("sep", ",").option("encoding", "utf-8")
     .schema(crimeSchema)
     .csv(pathToCrimeFile).as[Crime]
 
   val offenseCodesSchema = Encoders.product[OffenseCodes].schema
   val offenseCodesDf = spark.read
-    .option("header", "true").option("sep", ";").option("encoding", "utf-8")
+    .option("header", "true").option("sep", ",").option("encoding", "utf-8")
     .schema(offenseCodesSchema)
     .csv(pathToOffenseCodesFile).distinct().as[OffenseCodes]
 
@@ -41,13 +41,24 @@ object BostonCrimesMap extends App {
         |SELECT
         |     t1.DISTRICT,
         |     COUNT(*) AS crimes_total,
-        |     CEIL(COUNT(*) / 12) AS crimes_monthly,
         |     AVG(t1.LAT) AS lat,
         |     AVG(t1.LONG) AS lng
         |FROM crimeOffenceCodesJoin AS t1
         |GROUP BY t1.DISTRICT
         |ORDER BY t1.DISTRICT DESC
       """.stripMargin).createOrReplaceTempView("preResultTable")
+
+  spark.sql(
+    """
+      |SELECT t2.DISTRICT, PERCENTILE_APPROX(t2.counts, 0.5) AS crimes_monthly
+      |FROM (
+      |   SELECT t1.DISTRICT, t1.MONTH, COUNT(*) AS counts
+      |   FROM crimeOffenceCodesJoin AS t1
+      |   GROUP BY t1.DISTRICT, t1.MONTH
+      |   ORDER BY t1.DISTRICT, counts
+      |) AS t2
+      |GROUP BY t2.DISTRICT
+    """.stripMargin).createOrReplaceTempView("crimesTotal")
 
   val separateForCrimeTypes = ", "
   spark.sql(
@@ -67,10 +78,12 @@ object BostonCrimesMap extends App {
 
   val resultTable = spark.sql(
     """
-      |SELECT t1.DISTRICT, t1.crimes_total, t1.crimes_monthly, t2.frequent_crime_types, t1.lat, t1.lng
+      |SELECT t1.DISTRICT, t1.crimes_total, t3.crimes_monthly, t2.frequent_crime_types, t1.lat, t1.lng
       |FROM preResultTable AS t1
       |INNER JOIN districtAndCrimeTypes AS t2
       |ON t1.DISTRICT = t2.DISTRICT
+      |INNER JOIN crimesTotal AS t3
+      |ON t1.DISTRICT = t3.DISTRICT
     """.stripMargin)
   resultTable.repartition(1).write.format("parquet").save(pathToSaveResultFile)
 }
