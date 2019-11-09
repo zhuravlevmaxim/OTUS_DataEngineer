@@ -24,7 +24,6 @@ def add_customer(customer_id, phone_number, lifetime_value):
         store = {}
 
     store[customer_id] = {'phone': phone_number, 'ltv': lifetime_value}
-    print(store)
     client.put(key, store)
 
 
