@@ -1,44 +1,51 @@
 import logging
-
+  
 import aerospike
+from aerospike import predicates as p
 import sys
 
 config = {
-    'hosts': [('127.0.0.1', 3000)]
+  'hosts': [('127.0.0.1', 3000)]
 }
+
 
 try:
     client = aerospike.client(config).connect()
 except:
-    print("failed to connect to the cluster with", config['hosts'])
+    logging.error("failed to connect to the cluster with", config['hosts'])
     sys.exit(1)
 
-key = ('test', 'demo', 'store')
+try:
+    client.index_string_create("test", "demo", "phone", "phone_indx")
+except:
+    logging.info("index created!")
 
 
 def add_customer(customer_id, phone_number, lifetime_value):
-    try:
-        (key_tmp, meta, store) = client.get(key)
-    except:
-        logging.error('store not found')
-        store = {}
-
-    store[customer_id] = {'phone': phone_number, 'ltv': lifetime_value}
-    client.put(key, store)
+    key = ("test", "demo", customer_id)
+    client.put(key, {"phone": str(phone_number), "ltv": lifetime_value})
 
 
 def get_ltv_by_id(customer_id):
+    key = ("test", "demo", customer_id)
     (key_tmp, meta, store) = client.get(key)
-    item = store.get(customer_id, {})
-    if (item == {}):
-        logging.error('Requested non-existent customer ' + str(customer_id))
+    if (store == {}):
+        logging.error("Requested non-existent customer " + str(customer_id))
     else:
-        return item.get('ltv')
+        return store.get("ltv")
 
 
 def get_ltv_by_phone(phone_number):
-    (key_tmp, meta, store) = client.get(key)
-    for v in store.values():
-        if (v['phone'] == phone_number):
-            return v['ltv']
-        logging.error('Requested phone number is not found ' + str(phone_number))
+
+    query = client.query("test", "demo")
+    query.select("ltv")
+    query.where(p.equals("phone", phone_number))
+    ltvs = []
+
+    def matches_phone(tuple_1):
+        key, metadata, bins = tuple_1
+        ltvs.append(bins["ltv"])
+
+    query.foreach(matches_phone, {"total_timeout": 2000})
+
+    return ltvs[0]
